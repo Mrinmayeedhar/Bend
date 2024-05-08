@@ -33,6 +33,8 @@ itertools = "0.11.0"
 loaned = "0.1.0"
 parking_lot = "0.12.1"
 stacker = "0.1"
+bpm = { git = "https://github.com/LunaAmora/Bend-Package-Manager" }
+rpassword = "7.3"
 
 [dev-dependencies]
 insta = "1.34.0"
