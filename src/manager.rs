@@ -1,4 +1,7 @@
-use bend::{diagnostics::Diagnostics, fun::Book};
+use bend::{
+  diagnostics::Diagnostics,
+  fun::{Book, Name},
+};
 use bpm::*;
 use clap::Subcommand;
 use std::path::PathBuf;
@@ -97,9 +100,13 @@ pub fn load_cmd(name: &str) -> Result<String, String> {
   load(&PackageDescriptor::from(name)).map(|Package(pack)| pack)
 }
 
+fn load_multiple(_base_name: &Name, _sub_packages: &[Name]) -> Result<String, String> {
+  todo!()
+}
+
 fn check(path: PathBuf) -> Result<Package, Diagnostics> {
   let load_book = |path: &std::path::Path| -> Result<Book, Diagnostics> {
-    let book = bend::load_file_to_book(path, load_cmd)?;
+    let book = bend::load_file_to_book(path, load_multiple)?;
     Ok(book)
   };
 

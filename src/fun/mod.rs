@@ -48,11 +48,22 @@ pub struct Book {
   /// A custom or default "main" entrypoint.
   pub entrypoint: Option<Name>,
 
-  /// Imports declared in the program
-  pub imports: IndexSet<Name>,
+  /// Imported packages to be loaded in the program
+  pub imports: Imports,
+}
 
-  /// Imported modules to be loaded in the program
-  pub mods: IndexMap<Name, (Name, Book)>,
+#[derive(Debug, Clone, Default)]
+pub struct Imports {
+  /// Imports declared in the program source
+  pub names: Vec<(Name, Vec<Name>)>,
+
+  /// Map from binded names to source package
+  pub map: HashMap<Name, Name>,
+
+  /// Imported packages to be loaded in the program
+  /// When loaded, the book contents are drained to the parent book,
+  /// adjusting def names and refs accordingly
+  pub pkgs: Vec<(Name, Book)>,
 }
 
 pub type Adts = IndexMap<Name, Adt>;
@@ -72,7 +83,7 @@ pub enum Visibility {
   #[default]
   Normal,
   Import,
-  Inacessible,
+  Inaccessible,
 }
 
 /// A pattern matching rule of a definition.

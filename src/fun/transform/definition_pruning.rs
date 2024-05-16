@@ -1,6 +1,6 @@
 use crate::{
   diagnostics::WarningType,
-  fun::{Adt, Book, Ctx, Name, Term, LIST, STRING},
+  fun::{Adt, Book, Ctx, Name, Term, Visibility, LIST, STRING},
   maybe_grow,
 };
 use indexmap::IndexSet;
@@ -87,7 +87,7 @@ impl Ctx<'_> {
       let def = &self.book.defs[&def_name];
       if prune_all || def.builtin {
         self.book.defs.shift_remove(&def_name);
-      } else if !def_name.is_generated() {
+      } else if !def_name.is_generated() && !matches!(def.visibility, Visibility::Inaccessible) {
         self.info.add_rule_warning("Definition is unused.", WarningType::UnusedDefinition, def_name);
       }
     }

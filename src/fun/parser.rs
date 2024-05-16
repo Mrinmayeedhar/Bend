@@ -104,8 +104,8 @@ impl<'a> TermParser<'a> {
       }
       // Import declaration
       if self.try_parse_keyword("use") {
-        let import = self.parse_import()?;
-        book.imports.insert(import.clone());
+        let (imports, sub_imports) = self.parse_import()?;
+        book.imports.names.push((imports, sub_imports));
         continue;
       }
       // Fun function definition
@@ -156,15 +156,16 @@ impl<'a> TermParser<'a> {
     }
   }
 
-  fn parse_import(&mut self) -> Result<Name, String> {
+  fn parse_import(&mut self) -> Result<(Name, Vec<Name>), String> {
     // use package
     let import = self.labelled(|p| p.parse_bend_name_import(), "package name")?;
 
     if self.try_consume("{") {
-      todo!("syntax not implemented yet")
+      let sub = self.list_like(|p| p.parse_bend_name(), "", "}", ",", false, 1)?;
+      return Ok((import, sub));
     }
 
-    Ok(import)
+    Ok((import, Vec::new()))
   }
 
   fn parse_rule(&mut self) -> ParseResult<(Name, Rule)> {

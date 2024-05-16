@@ -251,11 +251,11 @@ fn execute_cli_mode(mut cli: Cli) -> Result<(), Diagnostics> {
   let entrypoint = cli.entrypoint.take();
 
   let load_book = |path: &Path| -> Result<Book, Diagnostics> {
-    let import_loader = |file_name: &str| {
-      if file_name.contains('@') {
-        load_cmd(file_name)
+    let import_loader = |name: &Name, _: &[Name]| {
+      if name.contains('@') {
+        load_cmd(name)
       } else {
-        let path = path.parent().unwrap().join(file_name).with_extension("bend");
+        let path = path.parent().unwrap().join(name.as_ref()).with_extension("bend");
         std::fs::read_to_string(path).map_err(|e| e.to_string())
       }
     };

@@ -1,4 +1,4 @@
-use crate::fun::{parser::TermParser, Book};
+use super::{parser::TermParser, Book, Name};
 use std::path::Path;
 
 // TODO: Refactor so that we don't mix the two syntaxes here.
@@ -6,29 +6,35 @@ use std::path::Path;
 /// Reads a file and parses to a definition book.
 pub fn load_file_to_book(
   path: &Path,
-  package_loader: impl Fn(&str) -> Result<String, String>,
+  package_loader: impl Fn(&Name, &[Name]) -> Result<String, String>,
 ) -> Result<Book, String> {
-  let builtins = Book::builtins();
+  let builtins = Book::default();
   let code = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
   let mut book = do_parse_book(&code, path, builtins)?;
 
-  load_imports(&mut book, &package_loader)?;
+  load_imports_to_book(&mut book, &package_loader)?;
   Ok(book)
 }
 
-fn load_imports(
+fn load_imports_to_book(
   book: &mut Book,
-  package_loader: &impl Fn(&str) -> Result<String, String>,
+  package_loader: &impl Fn(&Name, &[Name]) -> Result<String, String>,
 ) -> Result<(), String> {
-  for import in &book.imports {
-    let code = package_loader(import)?;
-    let mut module = TermParser::new(&code).parse_book(Book::default(), false)?;
-    load_imports(&mut module, package_loader)?;
+  for (src, sub_imports) in &book.imports.names {
+    let code = package_loader(src, sub_imports)?;
 
-    let (_, name) = import.split_once('/').unwrap();
-    let name = super::Name::new(name);
-    book.mods.insert(name, (import.clone(), module));
+    let mut module = TermParser::new(&code).parse_book(Book::default(), false)?;
+    load_imports_to_book(&mut module, package_loader)?;
+
+    let (_, name) = src.split_once('/').unwrap();
+    book.imports.map.insert(Name::new(name), src.clone());
+    book
+      .imports
+      .map
+      .extend(sub_imports.iter().map(|sub| (sub.clone(), Name::new(format!("{}/{}", src, sub)))));
+    book.imports.pkgs.push((src.clone(), module));
   }
+
   Ok(())
 }
 
