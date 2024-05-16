@@ -11,7 +11,7 @@ impl Book {
         let body = encode_ctr(fields.iter().map(|f| &f.nam), ctrs, ctr_name);
 
         let rules = vec![Rule { pats: vec![], body }];
-        let def = Definition { name: ctr_name.clone(), rules, builtin: adt.builtin };
+        let def = Definition::new(ctr_name.clone(), rules, adt.builtin);
         defs.push((ctr_name.clone(), def));
       }
     }

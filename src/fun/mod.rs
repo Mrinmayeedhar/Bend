@@ -47,6 +47,12 @@ pub struct Book {
 
   /// A custom or default "main" entrypoint.
   pub entrypoint: Option<Name>,
+
+  /// Imports declared in the program
+  pub imports: IndexSet<Name>,
+
+  /// Imported modules to be loaded in the program
+  pub mods: IndexMap<Name, (Name, Book)>,
 }
 
 pub type Adts = IndexMap<Name, Adt>;
@@ -58,6 +64,15 @@ pub struct Definition {
   pub name: Name,
   pub rules: Vec<Rule>,
   pub builtin: bool,
+  pub visibility: Visibility,
+}
+
+#[derive(Debug, Clone, Default)]
+pub enum Visibility {
+  #[default]
+  Normal,
+  Import,
+  Inacessible,
 }
 
 /// A pattern matching rule of a definition.
@@ -800,6 +815,20 @@ impl Term {
     }
   }
 
+  pub fn subst_refs(&mut self, map: &HashMap<Name, Name>) {
+    maybe_grow(|| {
+      for child in self.children_mut() {
+        child.subst_refs(map);
+      }
+    });
+
+    if let Term::Ref { nam } = self {
+      if let Some(to) = map.get(nam) {
+        *nam = to.clone();
+      }
+    }
+  }
+
   /// Collects all the free variables that a term has
   /// and the number of times each var is used
   pub fn free_vars(&self) -> HashMap<Name, u64> {
@@ -1030,6 +1059,20 @@ impl Rule {
 }
 
 impl Definition {
+  pub fn new(name: Name, rules: Vec<Rule>, builtin: bool) -> Self {
+    Self { name, rules, builtin, visibility: Visibility::Normal }
+  }
+
+  pub fn new_import(name: Name, rules: Vec<Rule>, builtin: bool, visibility: Visibility) -> Self {
+    Self { name, rules, builtin, visibility }
+  }
+
+  pub fn subst_refs(&mut self, map: &HashMap<Name, Name>) {
+    for r in &mut self.rules {
+      r.body.subst_refs(map);
+    }
+  }
+
   pub fn arity(&self) -> usize {
     self.rules[0].arity()
   }

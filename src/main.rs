@@ -5,6 +5,7 @@ use bend::{
   load_file_to_book, run_book_with_fn, CompileOpts, OptLevel, RunOpts,
 };
 use clap::{Args, CommandFactory, Parser, Subcommand};
+use manager::load_cmd;
 use std::{
   path::{Path, PathBuf},
   process::ExitCode,
@@ -250,7 +251,16 @@ fn execute_cli_mode(mut cli: Cli) -> Result<(), Diagnostics> {
   let entrypoint = cli.entrypoint.take();
 
   let load_book = |path: &Path| -> Result<Book, Diagnostics> {
-    let mut book = load_file_to_book(path)?;
+    let import_loader = |file_name: &str| {
+      if file_name.contains('@') {
+        load_cmd(file_name)
+      } else {
+        let path = path.parent().unwrap().join(file_name).with_extension("bend");
+        std::fs::read_to_string(path).map_err(|e| e.to_string())
+      }
+    };
+
+    let mut book = load_file_to_book(path, import_loader)?;
     book.entrypoint = entrypoint.map(Name::new);
 
     if arg_verbose {

@@ -77,8 +77,7 @@ impl Term {
         let body = free_vars.iter().rfold(body, |acc, bind| Term::lam(Pattern::Var(Some(bind.clone())), acc));
         let body =
           bind.iter_mut().rfold(body, |acc, bind| Term::lam(Pattern::Var(std::mem::take(bind)), acc));
-        let def =
-          Definition { name: new_nam.clone(), rules: vec![Rule { pats: vec![], body }], builtin: false };
+        let def = Definition::new(new_nam.clone(), vec![Rule { pats: vec![], body }], false);
         new_defs.push(def);
 
         // Call the new function in the original term.

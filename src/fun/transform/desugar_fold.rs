@@ -116,8 +116,7 @@ impl Term {
           body = Term::lam(Pattern::Var(Some(nam.clone())), body);
         }
         body = Term::lam(Pattern::Var(Some(x_nam)), body);
-        let def =
-          Definition { name: new_nam.clone(), rules: vec![Rule { pats: vec![], body }], builtin: false };
+        let def = Definition::new(new_nam.clone(), vec![Rule { pats: vec![], body }], false);
         new_defs.push(def);
 
         // Call the new function

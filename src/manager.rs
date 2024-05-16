@@ -60,9 +60,7 @@ pub fn handle_package_cmd(command: PackageCmd) -> Result<(), Diagnostics> {
 
     PackageCmd::Store { path, name, namespace, version } => store_cmd(path, name, namespace, version)?,
 
-    PackageCmd::Load { name } => load(&PackageDescriptor::from(name.as_str())).map(|Package(pack)| {
-      println!("{}", pack);
-    })?,
+    PackageCmd::Load { name } => load_cmd(&name).map(|pack| println!("{}", pack))?,
 
     PackageCmd::MakePub { name } => make_public(name)?,
 
@@ -95,9 +93,13 @@ fn store_cmd(
   Ok(())
 }
 
+pub fn load_cmd(name: &str) -> Result<String, String> {
+  load(&PackageDescriptor::from(name)).map(|Package(pack)| pack)
+}
+
 fn check(path: PathBuf) -> Result<Package, Diagnostics> {
   let load_book = |path: &std::path::Path| -> Result<Book, Diagnostics> {
-    let book = bend::load_file_to_book(path)?;
+    let book = bend::load_file_to_book(path, load_cmd)?;
     Ok(book)
   };
 

@@ -108,7 +108,7 @@ impl Term {
     let extracted_term = std::mem::replace(self, comb_ref);
 
     let rules = vec![Rule { body: extracted_term, pats: Vec::new() }];
-    let rule = Definition { name: comb_name.clone(), rules, builtin };
+    let rule = Definition::new(comb_name.clone(), rules, builtin);
     ctx.combinators.insert(comb_name, (is_safe, rule));
   }
 }
