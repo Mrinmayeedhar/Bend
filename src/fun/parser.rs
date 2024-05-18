@@ -106,6 +106,7 @@ impl<'a> TermParser<'a> {
       if self.try_parse_keyword("use") {
         let (imports, sub_imports) = self.parse_import()?;
         book.imports.names.push((imports, sub_imports));
+        indent = self.advance_newlines();
         continue;
       }
       // Fun function definition
@@ -161,7 +162,7 @@ impl<'a> TermParser<'a> {
     let import = self.labelled(|p| p.parse_bend_name_import(), "package name")?;
 
     if self.try_consume("{") {
-      let sub = self.list_like(|p| p.parse_bend_name(), "", "}", ",", false, 1)?;
+      let sub = self.list_like(|p| p.parse_bend_name(), "", "}", ",", false, 0)?;
       return Ok((import, sub));
     }
 
