@@ -76,16 +76,16 @@ pub fn handle_package_cmd(command: PackageCmd) -> Result<(), Diagnostics> {
 fn store_cmd(
   mut path: PathBuf,
   name: Option<String>,
-  nammespace: String,
+  namespace: String,
   version: String,
 ) -> Result<(), Diagnostics> {
   let package_name = match name {
-    Some(name) => format!("{}/{}", nammespace, name),
+    Some(name) => format!("{}/{}", namespace, name),
     None => {
       path.set_extension("");
       let file_name = path.file_name();
       let file_name = file_name.ok_or("Expected a file path to Store, found a directory".to_string())?;
-      format!("{}/{}", nammespace, file_name.to_string_lossy())
+      format!("{}/{}", namespace, file_name.to_string_lossy())
     }
   };
 
@@ -112,7 +112,7 @@ fn check(path: PathBuf) -> Result<Package, Diagnostics> {
 
   crate::check(CliWarnOpts::default(), Vec::new(), load_book, &path)?;
 
-  let source_code = std::fs::read_to_string(path).expect("This should't happen if load_book was sucessfull");
+  let source_code = std::fs::read_to_string(path).expect("This should't happen if load_book was successful");
   Ok(Package(source_code))
 }
 
