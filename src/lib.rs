@@ -1,6 +1,5 @@
 #![feature(box_patterns)]
 #![feature(let_chains)]
-#![feature(iterator_try_collect)]
 
 use crate::fun::{book_to_nets, net_to_term::net_to_term, term_to_net::Labels, Book, Ctx, Term};
 use diagnostics::{Diagnostics, DiagnosticsConfig, ERR_INDENT_SIZE};
@@ -20,7 +19,7 @@ pub mod hvm;
 pub mod imp;
 pub mod net;
 
-pub use fun::load_book::load_file_to_book;
+pub use fun::load_book::{load_file_to_book, load_to_book};
 
 pub const ENTRY_POINT: &str = "main";
 pub const HVM1_ENTRY_POINT: &str = "Main";
