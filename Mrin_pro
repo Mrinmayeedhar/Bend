@@ -1,0 +1,114 @@
+Project Plan: Activity Tracker Chrome Extension
+Overview:-
+The Activity Tracker Chrome Extension aims to enhance user productivity by tracking and analyzing the time spent on various websites. It will provide users with tools to monitor their browsing habits, set restrictions, and receive insights to manage their online activity better.
+
+Feature List:-
+#Must-Have Features
+
+1.Chrome Extension:
+Users can create an account using an email address and log in to the extension.
+Tracks the time spent on each website and specific parts of a website.
+Allows users to add websites to a restricted list and block access to them.
+Enables users to set time limits on websites, automatically closing tabs when the limit is reached.
+A personalized dashboard showing website usage, with detailed analytics and categorization of websites.
+
+2.Backend:
+User authentication and data management using Ruby on Rails.
+Data storage and retrieval with MySQL.
+
+3.Frontend:
+User interfaces for the Chrome extension and dashboard using a JavaScript framework (e.g., React).
+
+#Additional Features
+
+Data Filters: Generate reports on daily, weekly, monthly, and yearly usage.
+Feedback and Tips: Provide tips for managing browsing time.
+Motivation: Enable users to add people to a watch list for comparative insights.
+Idle Detection: Determine if the screen is idle and store the data accordingly.
+
+Tech Stack:-
+Backend: Ruby on Rails
+Frontend: React.js (or another JavaScript framework)
+Database: MySQL
+Cloud Hosting: Heroku, AWS, or similar
+
+Steps to Set Up the Project
+Backend Setup:
+
+Install Ruby and Rails.
+Create a new Rails application.
+Set up MySQL database.
+Implement user authentication with Devise gem.
+Create models for users, websites, and activities.
+Develop APIs for tracking and retrieving website activity data.
+Frontend Setup:
+
+Initialize a React project.
+Build components for the extension popup, dashboard, and settings.
+Integrate with the backend APIs for user authentication and data retrieval.
+Implement real-time activity tracking using Chrome extension APIs.
+Chrome Extension:
+
+Create a manifest file for the extension.
+Develop background scripts to track active tabs and visited URLs.
+Implement content scripts for injecting tracking logic into web pages.
+Build the popup UI for the extension.
+Deployment:
+
+Deploy the Rails backend to a cloud hosting service.
+Host the React frontend on a cloud platform.
+Publish the Chrome extension to the Chrome Web Store.
+
+Documentation
+README.md:
+Steps to set up and run the project.
+Checklist of implemented features.
+Project value proposition.
+Instructions for using the extension and dashboard.
+Database schema details.
+Screenshots of key features.
+Demo Video:
+Create a demo video showcasing the extension's features and functionalities.
+Database Schema
+Users Table:
+
+id: integer (primary key)
+email: string
+password_digest: string
+Websites Table:
+
+id: integer (primary key)
+user_id: integer (foreign key)
+url: string
+category: string
+Activities Table:
+
+id: integer (primary key)
+user_id: integer (foreign key)
+website_id: integer (foreign key)
+start_time: datetime
+end_time: datetime
+duration: integer
+Implementation Checklist
+ User authentication and account creation.
+ Tracking active tabs and specific page URLs.
+ Restricting access to certain websites.
+ Setting time limits on website usage.
+ Personalized dashboard with usage analytics.
+ Data filtering and reporting.
+ Idle detection and activity logging.
+ Comprehensive README documentation.
+ Deployment of the application.
+ Demo video (optional but recommended).
+Values to Society
+Encourages mindful browsing and productivity.
+Helps users identify and reduce time spent on distracting websites.
+Provides insights and tips for better time management.
+Enhances focus and efficiency in digital activities.
+Final Deliverables
+Deployed application link.
+Private GitHub repository with well-documented code.
+README file with detailed setup instructions.
+Database schema and screenshots.
+Optional demo video showcasing features.
+This project plan outlines the key steps and considerations for developing the Activity Tracker Chrome Extension, ensuring a structured and comprehensive approach to implementation.
