@@ -5,11 +5,8 @@ use bend::{
   load_file_to_book, run_book_with_fn, CompileOpts, OptLevel, RunOpts,
 };
 use clap::{Args, CommandFactory, Parser, Subcommand};
-use manager::load_cmd;
-use std::{
-  path::{Path, PathBuf},
-  process::ExitCode,
-};
+use manager::load_multiple;
+use std::{path::PathBuf, process::ExitCode};
 
 mod manager;
 
@@ -77,6 +74,7 @@ enum Mode {
     #[arg(help = "Path to the input file")]
     path: PathBuf,
   },
+  /// Runs a package manager command
   Manager {
     #[command(subcommand)]
     command: manager::PackageCmd,
@@ -250,25 +248,7 @@ fn execute_cli_mode(mut cli: Cli) -> Result<(), Diagnostics> {
   let arg_verbose = cli.verbose;
   let entrypoint = cli.entrypoint.take();
 
-  let load_book = |path: &Path| -> Result<Book, Diagnostics> {
-    let import_loader = |name: &Name, _: &[Name]| {
-      if name.contains('@') {
-        load_cmd(name)
-      } else {
-        let path = path.parent().unwrap().join(name.as_ref()).with_extension("bend");
-        std::fs::read_to_string(path).map_err(|e| e.to_string())
-      }
-    };
-
-    let mut book = load_file_to_book(path, import_loader)?;
-    book.entrypoint = entrypoint.map(Name::new);
-
-    if arg_verbose {
-      println!("{book}");
-    }
-
-    Ok(book)
-  };
+  let load_book = load_book(entrypoint, arg_verbose);
 
   let (gen_cmd, gen_supports_io) = match &cli.mode {
     Mode::GenC(..) => ("gen-c", true),
@@ -283,13 +263,13 @@ fn execute_cli_mode(mut cli: Cli) -> Result<(), Diagnostics> {
   };
 
   match cli.mode {
-    Mode::Check { comp_opts, warn_opts, path } => check(warn_opts, comp_opts, load_book, &path)?,
+    Mode::Check { comp_opts, warn_opts, path } => check(warn_opts, comp_opts, load_book, path)?,
 
     Mode::GenHvm(GenArgs { comp_opts, warn_opts, path, .. }) => {
       let diagnostics_cfg = set_warning_cfg_from_cli(DiagnosticsConfig::default(), warn_opts);
       let opts = compile_opts_from_cli(&comp_opts);
 
-      let mut book = load_book(&path)?;
+      let mut book = load_book(path)?;
       let compile_res = compile_book(&mut book, opts, diagnostics_cfg, None)?;
 
       eprint!("{}", compile_res.diagnostics);
@@ -304,7 +284,7 @@ fn execute_cli_mode(mut cli: Cli) -> Result<(), Diagnostics> {
       let diagnostics_cfg = set_warning_cfg_from_cli(DiagnosticsConfig::default(), warn_opts);
       let opts = compile_opts_from_cli(&comp_opts);
 
-      let mut book = load_book(&path)?;
+      let mut book = load_book(path)?;
       let compile_res = compile_book(&mut book, opts, diagnostics_cfg, None)?;
 
       let out_path = ".out.hvm";
@@ -334,7 +314,7 @@ fn execute_cli_mode(mut cli: Cli) -> Result<(), Diagnostics> {
 
       let opts = compile_opts_from_cli(&comp_opts);
 
-      let mut book = load_book(&path)?;
+      let mut book = load_book(path)?;
       let diagnostics = desugar_book(&mut book, opts, diagnostics_cfg, None)?;
 
       eprint!("{diagnostics}");
@@ -363,7 +343,7 @@ fn execute_cli_mode(mut cli: Cli) -> Result<(), Diagnostics> {
 
       let run_opts = RunOpts { linear_readback: linear, pretty };
 
-      let book = load_book(&path)?;
+      let book = load_book(path)?;
       if let Some((term, stats, diags)) =
         run_book_with_fn(book, run_opts, compile_opts, diagnostics_cfg, arguments, run_cmd, io)?
       {
@@ -378,19 +358,38 @@ fn execute_cli_mode(mut cli: Cli) -> Result<(), Diagnostics> {
         }
       }
     }
-    Mode::Manager { command } => match manager::handle_package_cmd(command) {
-      Ok(_) => todo!(),
-      Err(_) => todo!(),
-    },
+    Mode::Manager { command } => manager::handle_package_cmd(command)?,
   };
   Ok(())
+}
+
+fn load_book(entrypoint: Option<String>, arg_verbose: bool) -> impl Fn(PathBuf) -> Result<Book, Diagnostics> {
+  move |path: PathBuf| -> Result<Book, Diagnostics> {
+    let package_loader = |name: &Name, sub_packages: &[Name]| {
+      if name.contains('@') {
+        load_multiple(name, sub_packages)
+      } else {
+        let path = path.parent().unwrap().join(name.as_ref()).with_extension("bend");
+        std::fs::read_to_string(path).map_err(|e| e.to_string())
+      }
+    };
+
+    let mut book = load_file_to_book(&path, package_loader)?;
+    book.entrypoint = entrypoint.clone().map(Name::new);
+
+    if arg_verbose {
+      println!("{book}");
+    }
+
+    Ok(book)
+  }
 }
 
 pub fn check(
   warn_opts: CliWarnOpts,
   comp_opts: Vec<OptArgs>,
-  load_book: impl FnOnce(&Path) -> Result<Book, Diagnostics>,
-  path: &Path,
+  load_book: impl FnOnce(PathBuf) -> Result<Book, Diagnostics>,
+  path: PathBuf,
 ) -> Result<(), Diagnostics> {
   let diagnostics_cfg = set_warning_cfg_from_cli(DiagnosticsConfig::default(), warn_opts);
   let compile_opts = compile_opts_from_cli(&comp_opts);
@@ -426,7 +425,7 @@ fn set_warning_cfg_from_cli(mut cfg: DiagnosticsConfig, warn_opts: CliWarnOpts) 
   let subcmd_name = matches.subcommand_name().expect("To have a subcommand");
   let arg_matches = matches.subcommand_matches(subcmd_name).expect("To have a subcommand");
 
-  if let Some(warn_opts_ids) = arg_matches.get_many::<clap::Id>("CliWarnOpts") {
+  if let Ok(Some(warn_opts_ids)) = arg_matches.try_get_many::<clap::Id>("CliWarnOpts") {
     let mut allows = warn_opts.allows.into_iter();
     let mut warns = warn_opts.warns.into_iter();
     let mut denies = warn_opts.denies.into_iter();

@@ -1,6 +1,6 @@
 use bend::{
   diagnostics::Diagnostics,
-  fun::{Book, Name},
+  fun::{load_book::load_to_book, Book, Name},
 };
 use bpm::*;
 use clap::Subcommand;
@@ -74,7 +74,7 @@ pub fn handle_package_cmd(command: PackageCmd) -> Result<(), Diagnostics> {
 }
 
 fn store_cmd(
-  mut path: PathBuf,
+  path: PathBuf,
   name: Option<String>,
   namespace: String,
   version: String,
@@ -82,7 +82,7 @@ fn store_cmd(
   let package_name = match name {
     Some(name) => format!("{}/{}", namespace, name),
     None => {
-      path.set_extension("");
+      let path = path.clone().with_extension("");
       let file_name = path.file_name();
       let file_name = file_name.ok_or("Expected a file path to Store, found a directory".to_string())?;
       format!("{}/{}", namespace, file_name.to_string_lossy())
@@ -100,20 +100,23 @@ pub fn load_cmd(name: &str) -> Result<String, String> {
   load(&PackageDescriptor::from(name)).map(|Package(pack)| pack)
 }
 
-fn load_multiple(_base_name: &Name, _sub_packages: &[Name]) -> Result<String, String> {
-  todo!()
+pub fn load_multiple(name: &Name, sub_packages: &[Name]) -> Result<String, String> {
+  if sub_packages.is_empty() { load_cmd(name) } else { todo!() }
 }
 
 fn check(path: PathBuf) -> Result<Package, Diagnostics> {
-  let load_book = |path: &std::path::Path| -> Result<Book, Diagnostics> {
-    let book = bend::load_file_to_book(path, load_multiple)?;
+  let source = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+
+  let load_book = |mut path: std::path::PathBuf| -> Result<Book, Diagnostics> {
+    let mut book = load_to_book(path.display(), &source, load_multiple)?;
+    path.set_extension("");
+    book.entrypoint = path.file_name().map(|e| Name::new(e.to_string_lossy()));
     Ok(book)
   };
 
-  crate::check(CliWarnOpts::default(), Vec::new(), load_book, &path)?;
+  crate::check(CliWarnOpts::default(), Vec::new(), load_book, path)?;
 
-  let source_code = std::fs::read_to_string(path).expect("This should't happen if load_book was successful");
-  Ok(Package(source_code))
+  Ok(Package(source))
 }
 
 fn register_cmd() -> Result<(), String> {
